@@ -1,0 +1,124 @@
+{# 继承自base.html文件 #}
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{# 写入base.html中定义的title #}
+{% block title %}
+    文章详情
+{% endblock %}
+
+{# 写入content #}
+{% block content %}
+
+    {# 文章详情 #}
+    <div class="container">
+        <div class="row">
+
+            {# 标题和作者 #}
+            <div class="col-9">
+            <h1 class="mt-4 mb-4">{{ article.title }}</h1>
+            <div class="alert alert-success">作者：{{ article.author }} &nbsp;&nbsp;浏览量:{{ article.total_views }}
+                {% if request.user.id == article.author_id %}
+                    <a style="margin-left:40%" href="{% url 'article:article_update' article.id %}">编辑文章</a>
+                    {# <a href="#" onclick="confirm_delete()" style="color:red">删除文章</a> #}
+                    <a href="#" onclick="confirm_safe_delete()" style="color:red; margin-left:5%">删除文章</a>
+                    <form
+                            style="display:none;"
+                            id="safe_delete"
+                            action="{% url 'article:article_safe_delete' article.id %}"
+                            method="post"
+                    >
+                        {% csrf_token %}
+                        <button type="submit">发送</button>
+                    </form>
+                {% endif %}
+            </div>
+                <div>
+
+                    {# 文章正题 #}
+                    <p>{{ article.body|safe }}</p>  {# 在article.body后面加上|safe过滤器 #}
+                </div>
+                <hr>
+
+                {# 留言 #}
+                {% if user.is_authenticated %}
+                    <div>
+                        <form action="{% url 'comment:post_comment' article.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="body">
+                                    <strong>
+                                        留言：
+                                    </strong>
+                                </label>
+                                <textarea name="body" id="body" rows="2" type="text" class="form-control"></textarea>
+                            </div>
+                            {# 提交 #}
+                            <button type="submit" class="btn btn-primary">发送</button>
+                        </form>
+                    </div>
+                    <br>
+                {% else %}
+                    <br>
+                    <h5 class="row justify-content-center">
+                        请<a href="{% url 'userprofile:login' %}">登陆</a>后回复
+                    </h5>
+                    <br>
+                {% endif %}
+
+                {# 显示评论 #}
+                <h4>共有{{ comments.count }}条评论</h4>
+                <div>
+                    {% for comment in comments %}
+                        <hr>
+                        <p>
+                            <strong style="color:pink">
+                                {{ comment.user }}
+                            </strong>于
+                            <span style="color:green">
+                                {{ comment.created|date:"Y-m-d H:i:s" }}
+                            </span>时留言:
+                        </p>
+                        <pre style="font-family: inherit; font-size: 1em;">{{ comment.body }}</pre>
+                    {% endfor %}
+                </div>
+            </div>
+            {# 目录 #}
+            <div class="col-3 mt-4">
+                <div style="position: fixed">
+                <h4><strong>目录</strong></h4>
+                <hr>
+                <div>
+                    {{ toc|safe }}
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        //删除文章函数
+        function confirm_delete(){
+            layer.open({    //调用layer弹窗组件
+                title:'确认删除',   //弹窗标题
+                content:'确定删除这篇文章吗？',    //正文
+                yes: function(index, layero){
+                    //指定应当前往的url
+                    location.href='{% url 'article:article_delete' article.id %}'
+                }
+            })
+        }
+
+        function confirm_safe_delete(){
+            layer.open({
+                title:'确认删除',
+                content:'确定删除这篇文章吗？',
+                yes:function(index, layero){
+                    $('form#safe_delete button').click();
+                    layer.close(index);
+                }
+            })
+        }
+    </script>
+
+{% endblock content %}
